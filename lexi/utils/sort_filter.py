@@ -75,7 +75,7 @@ def filter_words(row: WordRow) -> bool:
     bool
         True if the word matches both the text and type filters, False otherwise
     """
-    text: str = shared.win.lexicon_search_entry.get_text().lower()
+    text: str = shared.win.lexicon_search_entry.get_text().lower().strip()
     fits_in_filter = set(shared.config["enabled-types"]).issubset(set(row.word.types))
     if not text.startswith("#"):
         try:
