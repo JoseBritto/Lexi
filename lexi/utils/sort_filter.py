@@ -82,12 +82,12 @@ def filter_words(row: WordRow) -> bool:
             matches_text = (
                 text == ""
                 or text in row.word.word.lower().replace("&rtl", "")
-                or (
-                    text in row.word.translations[0].lower().replace("&rtl", "")
-                    if row.word.translations
-                    else ""
-                )
             )
+            if not matches_text and row.word.translations:
+                for translation in row.word.translations:
+                    if text in translation.lower().replace("&rtl", ""):
+                        matches_text = True
+                        break
             logger.debug(
                 "Word “%s”, is shown: %s",
                 row.word.word,
