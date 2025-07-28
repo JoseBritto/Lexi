@@ -6,6 +6,7 @@ from lexi import shared
 from lexi.logging.logger import logger
 from lexi.ui.WordRow import WordRow
 
+import unicodedata
 
 # pylint: disable=no-else-return
 def sort_words(row1: WordRow, row2: WordRow) -> int:
@@ -60,6 +61,9 @@ def sort_words(row1: WordRow, row2: WordRow) -> int:
         else:
             return 0
 
+def normalize_text(text: str) -> str:
+    text = unicodedata.normalize("NFD", text)
+    return ''.join(character for character in text if not unicodedata.combining(character))
 
 def filter_words(row: WordRow) -> bool:
     """
@@ -75,17 +79,18 @@ def filter_words(row: WordRow) -> bool:
     bool
         True if the word matches both the text and type filters, False otherwise
     """
-    text: str = shared.win.lexicon_search_entry.get_text().lower().strip()
+    text: str = normalize_text(shared.win.lexicon_search_entry.get_text().lower().strip())
     fits_in_filter = set(shared.config["enabled-types"]).issubset(set(row.word.types))
     if not text.startswith("#"):
         try:
             matches_text = (
                 text == ""
-                or text in row.word.word.lower().replace("&rtl", "")
+                or text in normalize_text(row.word.word.lower().replace("&rtl", ""))
             )
+            print(normalize_text(row.word.word.lower().replace("&rtl", "")))
             if not matches_text and row.word.translations:
                 for translation in row.word.translations:
-                    if text in translation.lower().replace("&rtl", ""):
+                    if text in normalize_text(translation.lower().replace("&rtl", "")):
                         matches_text = True
                         break
             logger.debug(
