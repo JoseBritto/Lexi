@@ -6,6 +6,7 @@ from lexi import shared
 from lexi.logging.logger import logger
 from lexi.ui.WordRow import WordRow
 
+import unicodedata
 
 # pylint: disable=no-else-return
 def sort_words(row1: WordRow, row2: WordRow) -> int:
@@ -60,6 +61,11 @@ def sort_words(row1: WordRow, row2: WordRow) -> int:
         else:
             return 0
 
+def remove_accents(text: str) -> str:
+    if shared.schema.get_boolean("accent-insensitive-search"):
+        text = unicodedata.normalize("NFD", text)
+        return ''.join(character for character in text if not unicodedata.combining(character))
+    return text
 
 def filter_words(row: WordRow) -> bool:
     """
@@ -75,17 +81,17 @@ def filter_words(row: WordRow) -> bool:
     bool
         True if the word matches both the text and type filters, False otherwise
     """
-    text: str = shared.win.lexicon_search_entry.get_text().lower().strip()
+    text: str = remove_accents(shared.win.lexicon_search_entry.get_text().lower().strip())
     fits_in_filter = set(shared.config["enabled-types"]).issubset(set(row.word.types))
     if not text.startswith("#"):
         try:
             matches_text = (
                 text == ""
-                or text in row.word.word.lower().replace("&rtl", "")
+                or text in remove_accents(row.word.word.lower().replace("&rtl", ""))
             )
             if not matches_text and row.word.translations:
                 for translation in row.word.translations:
-                    if text in translation.lower().replace("&rtl", ""):
+                    if text in remove_accents(translation.lower().replace("&rtl", "")):
                         matches_text = True
                         break
             logger.debug(
